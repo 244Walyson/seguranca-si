@@ -2,12 +2,78 @@
 
 Este projeto Terraform provisiona uma instância EC2 na AWS configurada para executar comandos de rede.
 
+## Arquitetura da Infraestrutura
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          AWS Cloud                              │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │ VPC (10.0.0.0/16)                                         │ │
+│  │                                                           │ │
+│  │  ┌─────────────────────────────────────────────────────┐ │ │
+│  │  │ Subnet Pública (10.0.1.0/24)                        │ │ │
+│  │  │                                                     │ │ │
+│  │  │  ┌──────────────────────────────────────────────┐  │ │ │
+│  │  │  │ EC2 Instance (Amazon Linux 2)                │  │ │ │
+│  │  │  │                                              │  │ │ │
+│  │  │  │ - Public IP: Auto-assigned                   │  │ │ │
+│  │  │  │ - Instance Type: t2.micro                    │  │ │ │
+│  │  │  │                                              │  │ │ │
+│  │  │  │ Ferramentas Instaladas:                      │  │ │ │
+│  │  │  │ • tcpdump    • nmap                          │  │ │ │
+│  │  │  │ • traceroute • telnet                        │  │ │ │
+│  │  │  │ • netcat     • dig/nslookup                  │  │ │ │
+│  │  │  │ • iperf3     • mtr                           │  │ │ │
+│  │  │  └──────────────────────────────────────────────┘  │ │ │
+│  │  │                        │                            │ │ │
+│  │  │                        │                            │ │ │
+│  │  │  ┌─────────────────────▼──────────────────────┐    │ │ │
+│  │  │  │ Security Group                             │    │ │ │
+│  │  │  │                                            │    │ │ │
+│  │  │  │ Inbound:                                   │    │ │ │
+│  │  │  │ • SSH (22/tcp)    from 0.0.0.0/0          │    │ │ │
+│  │  │  │ • ICMP (ping)     from 0.0.0.0/0          │    │ │ │
+│  │  │  │                                            │    │ │ │
+│  │  │  │ Outbound:                                  │    │ │ │
+│  │  │  │ • All traffic     to 0.0.0.0/0            │    │ │ │
+│  │  │  └────────────────────────────────────────────┘    │ │ │
+│  │  │                                                     │ │ │
+│  │  └─────────────────────────────────────────────────────┘ │ │
+│  │                              │                            │ │
+│  │                              │                            │ │
+│  │  ┌───────────────────────────▼──────────────────────────┐ │ │
+│  │  │ Route Table                                          │ │ │
+│  │  │ • 10.0.0.0/16 → local                               │ │ │
+│  │  │ • 0.0.0.0/0   → Internet Gateway                    │ │ │
+│  │  └──────────────────────────────────────────────────────┘ │ │
+│  │                              │                            │ │
+│  └──────────────────────────────┼────────────────────────────┘ │
+│                                 │                              │
+│  ┌──────────────────────────────▼────────────────────────────┐ │
+│  │ Internet Gateway                                          │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                                 │                              │
+└─────────────────────────────────┼──────────────────────────────┘
+                                  │
+                                  │
+                    ┌─────────────▼─────────────┐
+                    │   Internet (Public)       │
+                    │                           │
+                    │   SSH Access via:         │
+                    │   ssh ec2-user@<PUBLIC_IP>│
+                    └───────────────────────────┘
+```
+
 ## Recursos Criados
 
-- VPC com subnet pública
-- Internet Gateway
-- Security Group com acesso SSH e ICMP
-- Instância EC2 com ferramentas de rede pré-instaladas
+- **VPC** (10.0.0.0/16) - Rede virtual isolada
+- **Subnet Pública** (10.0.1.0/24) - Subnet com acesso à internet
+- **Internet Gateway** - Permite comunicação com a internet
+- **Route Table** - Roteia tráfego para a internet via IGW
+- **Security Group** - Firewall com regras de SSH e ICMP
+- **Key Pair** - Par de chaves SSH para autenticação
+- **EC2 Instance** - Servidor com ferramentas de rede pré-instaladas
 
 ## Ferramentas Instaladas
 
